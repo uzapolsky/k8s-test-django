@@ -4,3 +4,4 @@ __pycache__/
 *$py.class
 .env
 django-config.yml
+docker-compose.override.yml
