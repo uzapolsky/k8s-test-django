@@ -21,6 +21,71 @@ $ docker-compose run web ./manage.py createsuperuser
 
 Для тонкой настройки используйте переменные окружения. Список доступных переменных можно найти внутри файла `docker-compose.yml`.
 
+## Как развернуть сайт с помощью Kubernetes
+
+Установить [Kubernetes](https://kubernetes.io/ru/docs/tasks/tools/install-kubectl/).
+
+Установить [Minicube](https://minikube.sigs.k8s.io/docs/start/).
+
+Установить [VirtualBox](https://www.virtualbox.org/).
+
+Установить [Helm](https://helm.sh/).
+
+Добавить ноду minikube:
+
+```shell-session
+$ minikube start --driver=virtualbox
+```
+
+Собрать образ сайта для создания сервиса:
+
+```shell-session
+$ minikube image build -t django_app backend_main_django
+```
+
+Поднять базу данных:
+
+```shell-session
+$ helm install django-psql bitnami/postgresql
+```
+
+Заполнить файл `django-config-example.yml` своими переменными окружения, переименовать его в `django-config.yml` и применить `configMap` командой в новом терминале:
+
+```shell-session
+$ kubectl apply -f django-config.yml
+```
+
+Запустить `ingress `:
+
+```shell-session
+$ minikube addons enable ingress
+$ kubectl apply -f django-ingress.yml
+```
+
+Запустить `cronjob` для автоматического удаления сессий:
+
+```
+$ kubectl apply -f django-cronjob.yml
+```
+
+Запустить сервис:
+
+```shell-session
+$ kubectl apply -f django-service.yml
+```
+
+Сделать сервис доступным по адресу `example.test`:
+
+```shell-session
+echo "$(minikube ip) example.test" | sudo tee -a /etc/hosts
+```
+
+Для запуска миграций необходимо выполнить команду:
+
+```shell-session
+kubectl apply -f django-migrate-job.yml
+```
+
 ## Переменные окружения
 
 Образ с Django считывает настройки из переменных окружения:
